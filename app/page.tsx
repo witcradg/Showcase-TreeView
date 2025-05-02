@@ -4,7 +4,7 @@ import TreeView, { TreeViewItem, TreeViewMenuItem } from "@/components/tree-view
 import { test_data } from "@/lib/demo_data";
 import Image from "next/image";
 import { useState, useCallback } from "react";
-import { Globe, Store, FolderOpen, Apple, Send, Folder, File, Share2, Download, Trash2 } from "lucide-react";
+import { Globe, FolderOpen, Send, Folder, File, Share2, Download, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -15,11 +15,15 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
+type IconMap = {
+  [key: string]: React.ReactNode;
+};
+
 export default function Home() {
   const [treeData, setTreeData] = useState<TreeViewItem[]>(test_data);
   const [showRecap, setShowRecap] = useState(false);
 
-  const customIconMap = {
+  const customIconMap: IconMap = {
     region: <Globe className="h-4 w-4 text-purple-500" />,
     store: <Folder className="h-4 w-4 text-blue-500" />,
     department: <FolderOpen className="h-4 w-4 text-green-500" />,
@@ -134,7 +138,6 @@ export default function Home() {
           <TreeView
             data={treeData}
             className="max-h-[450px] overflow-y-auto"
-            title="Retail Store Hierarchy"
             iconMap={customIconMap}
             showCheckboxes={true}
             showExpandAll={false}

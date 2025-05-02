@@ -13,6 +13,8 @@ import {
   ChevronDown,
   Box,
   Search,
+  X,
+  Info,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -21,13 +23,11 @@ import {
   ContextMenuItem,
   ContextMenuTrigger,
 } from "@/components/ui/context-menu";
-import { X, Share2 } from "lucide-react";
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
-import { Info } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
@@ -54,10 +54,8 @@ export interface TreeViewMenuItem {
 export interface TreeViewProps {
   className?: string;
   data: TreeViewItem[];
-  title?: string;
   showExpandAll?: boolean;
   showCheckboxes?: boolean;
-  checkboxPosition?: "left" | "right";
   searchPlaceholder?: string;
   selectionText?: string;
   checkboxLabels?: {
@@ -76,7 +74,7 @@ interface TreeItemProps {
   item: TreeViewItem;
   depth?: number;
   selectedIds: Set<string>;
-  lastSelectedId: React.MutableRefObject<string | null>;
+  lastSelectedId: React.RefObject<string | null>;
   onSelect: (ids: Set<string>) => void;
   expandedIds: Set<string>;
   onToggleExpand: (id: string, isOpen: boolean) => void;
@@ -164,7 +162,7 @@ function TreeItem({
   iconMap = defaultIconMap,
   menuItems,
   getSelectedItems,
-}: TreeItemProps): JSX.Element {
+}: TreeItemProps): React.ReactElement {
   const isOpen = expandedIds.has(item.id);
   const isSelected = selectedIds.has(item.id);
   const itemRef = useRef<HTMLDivElement>(null);
@@ -229,7 +227,7 @@ function TreeItem({
     if (e.shiftKey && lastSelectedId.current !== null) {
       const items = Array.from(
         document.querySelectorAll("[data-tree-item]")
-      ) as HTMLElement[];
+      );
       const lastIndex = items.findIndex(
         (el) => el.getAttribute("data-id") === lastSelectedId.current
       );
@@ -266,36 +264,11 @@ function TreeItem({
     onSelect(newSelection);
   };
 
-  const handleAction = (action: string) => {
-    if (onAction) {
-      // Get all selected items, or just this item if none selected
-      const selectedItems =
-        selectedIds.size > 0
-          ? allItems
-              .flatMap((item) => getAllDescendants(item))
-              .filter((item) => selectedIds.has(item.id))
-          : [item];
-      onAction(action, selectedItems);
-    }
-  };
-
-  // Helper function to get all descendants of an item (including the item itself)
-  const getAllDescendants = (item: TreeViewItem): TreeViewItem[] => {
-    const descendants = [item];
-    if (item.children) {
-      item.children.forEach((child) => {
-        descendants.push(...getAllDescendants(child));
-      });
-    }
-    return descendants;
-  };
-
   const handleAccessClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (onAccessChange) {
       const currentState = getCheckState(item, itemMap);
-      // Toggle between checked and unchecked, treating indeterminate as unchecked
-      const newChecked = currentState === "checked" ? false : true;
+      const newChecked = currentState !== "checked";
       onAccessChange(item, newChecked);
     }
   };
@@ -366,9 +339,8 @@ function TreeItem({
             data-id={item.id}
             data-depth={depth}
             data-folder-closed={item.children && !isOpen}
-            className={`select-none cursor-pointer ${
-              isSelected ? `bg-orange-100 ${selectionStyle}` : "text-foreground"
-            } px-1`}
+            className={`select-none cursor-pointer ${isSelected ? `bg-orange-100 ${selectionStyle}` : "text-foreground"
+              } px-1`}
             style={{ paddingLeft: `${depth * 20}px` }}
             onClick={handleClick}
           >
@@ -703,8 +675,8 @@ export default function TreeView({
       const target = e.target as Element;
 
       const clickedInside =
-        (treeRef.current && treeRef.current.contains(target)) ||
-        (dragRef.current && dragRef.current.contains(target)) ||
+        treeRef.current?.contains(target) ||
+        dragRef.current?.contains(target) ||
         // Ignore clicks on context menus
         target.closest('[role="menu"]') ||
         target.closest("[data-radix-popper-content-wrapper]");
@@ -829,13 +801,13 @@ export default function TreeView({
 
       const items = Array.from(
         dragRef.current.querySelectorAll("[data-tree-item]")
-      ) as HTMLElement[];
+      );
 
       const startY = dragStart;
       const currentY = e.clientY;
       const [selectionStart, selectionEnd] = [
-        Math.min(startY || 0, currentY),
-        Math.max(startY || 0, currentY),
+        Math.min(startY ?? 0, currentY),
+        Math.max(startY ?? 0, currentY),
       ];
 
       const newSelection = new Set(
@@ -1011,11 +983,11 @@ export default function TreeView({
               className="absolute inset-0 bg-blue-500/0 pointer-events-none"
               style={{
                 top: Math.min(
-                  dragStart || 0,
+                  dragStart ?? 0,
                   dragStart === null ? 0 : currentMousePos
                 ),
                 height: Math.abs(
-                  (dragStart || 0) - (dragStart === null ? 0 : currentMousePos)
+                  (dragStart ?? 0) - (dragStart === null ? 0 : currentMousePos)
                 ),
               }}
             />
